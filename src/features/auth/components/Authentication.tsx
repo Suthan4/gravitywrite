@@ -26,44 +26,12 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-
-// Validation schemas
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-const registerSchema = z
-  .object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-      ),
-    confirmPassword: z.string(),
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
-    userType: z.enum(["patient", "caretaker"], {
-      required_error: "Please select your role",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-// interface AuthComponentProps {
-//   onAuthSuccess: (user: {
-//     id: string;
-//     email: string;
-//     userType: "patient" | "caretaker";
-//   }) => void;
-// }
+import {
+  LoginFormData,
+  loginSchema,
+  RegisterFormData,
+  registerSchema,
+} from "../types/authform";
 
 const Authentication = () => {
   const [isRegistering, setIsRegistering] = useState(false);

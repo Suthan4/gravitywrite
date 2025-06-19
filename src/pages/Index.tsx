@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Settings,
   LogOut,
+  Plus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +23,8 @@ const Index = () => {
   const [userType, setUserType] = useState<UserType>(null);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isCaretakerDlgOpen, setIsCaretakerDlgOpen] = useState(false);
+  const [isPatientDlgOpen, setIsPatientDlgOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -119,12 +122,34 @@ const Index = () => {
               )}
               Switch to {userType === "patient" ? "Caretaker" : "Patient"}
             </Button>
+            <Button
+              variant="outline"
+              onClick={
+                userType === "patient"
+                  ? () => setIsPatientDlgOpen(true)
+                  : () => setIsCaretakerDlgOpen(true)
+              }
+              className="flex items-center gap-2 hover:bg-accent transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Medication
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
-        {userType === "patient" ? <PatientDashboard /> : <CaretakerDashboard />}
+        {userType === "patient" ? (
+          <PatientDashboard
+            setIsPatientDlgOpen={setIsPatientDlgOpen}
+            isPatientDlgOpen={isPatientDlgOpen}
+          />
+        ) : (
+          <CaretakerDashboard
+            setIsCaretakerDlgOpen={setIsCaretakerDlgOpen}
+            isCaretakerDlgOpen={isCaretakerDlgOpen}
+          />
+        )}
       </main>
     </div>
   );
