@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Settings,
   LogOut,
-  Plus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "@/hooks/use-toast";
@@ -121,18 +120,6 @@ const Index = () => {
                 <User className="w-4 h-4" />
               )}
               Switch to {userType === "patient" ? "Caretaker" : "Patient"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={
-                userType === "patient"
-                  ? () => setIsPatientDlgOpen(true)
-                  : () => setIsCaretakerDlgOpen(true)
-              }
-              className="flex items-center gap-2 hover:bg-accent transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Medication
             </Button>
           </div>
         </div>

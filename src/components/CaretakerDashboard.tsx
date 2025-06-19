@@ -1,9 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Users,
@@ -13,75 +12,77 @@ import {
   AlertTriangle,
   Check,
   Clock,
-  Camera,
+  Plus,
 } from "lucide-react";
 import NotificationSettings from "./NotificationSettings";
+import MedicationForm from "./MedicationForm";
+import MedicationList from "./MedicationList";
+import AdherenceStats from "./AdherenceStats";
 import { format, isToday, isBefore, startOfDay } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
-import { useForm } from "react-hook-form";
-import FormDlg from "@/features/caretaker/components/FormDlg";
-import { useMedicationService } from "@/features/caretaker/services/medicationService";
-interface ICareTakerDashboardProps {
+import { useMedicationService } from "@/services/medicationService";
+import { CreateMedicationData } from "@/types/medication";
+
+interface CaretakerDashboardProps {
   setIsCaretakerDlgOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isCaretakerDlgOpen: boolean;
 }
 
-const CaretakerDashboard = ({
+const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
   setIsCaretakerDlgOpen,
   isCaretakerDlgOpen,
-}: ICareTakerDashboardProps) => {
+}) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { medications, medicationsLoading } = useMedicationService();
 
-  //React Hook for form Medication
+  const {
+    medications,
+    medicationLogs,
+    medicationsLoading,
+    logsLoading,
+    adherenceStats,
+    addMedicationMutation,
+    deleteMedicationMutation,
+    markMedicationTakenMutation,
+  } = useMedicationService();
 
-  // Mock data for demonstration
-  const patientName = "Eleanor Thompson";
-  const adherenceRate = 85;
-  const currentStreak = 5;
-  const missedDoses = 3;
-
-  // Mock data for taken medications (same as in PatientDashboard)
-  const takenDates = new Set([
-    "2024-06-10",
-    "2024-06-09",
-    "2024-06-07",
-    "2024-06-06",
-    "2024-06-05",
-    "2024-06-04",
-    "2024-06-02",
-    "2024-06-01",
-  ]);
-
-  const recentActivity = [
-    { date: "2024-06-10", taken: true, time: "8:30 AM", hasPhoto: true },
-    { date: "2024-06-09", taken: true, time: "8:15 AM", hasPhoto: false },
-    { date: "2024-06-08", taken: false, time: null, hasPhoto: false },
-    { date: "2024-06-07", taken: true, time: "8:45 AM", hasPhoto: true },
-    { date: "2024-06-06", taken: true, time: "8:20 AM", hasPhoto: false },
-  ];
-
-  const dailyMedication = {
-    name: "Daily Medication Set",
-    time: "8:00 AM",
-    status: takenDates.has(format(new Date(), "yyyy-MM-dd"))
-      ? "completed"
-      : "pending",
+  const handleAddMedication = async (data: CreateMedicationData) => {
+    await addMedicationMutation.mutateAsync(data);
   };
+
+  const handleMarkTaken = (medicationId: string, dateTaken: string) => {
+    markMedicationTakenMutation.mutate({
+      medication_id: medicationId,
+      date_taken: dateTaken,
+    });
+  };
+
+  const handleDeleteMedication = (medicationId: string) => {
+    deleteMedicationMutation.mutate(medicationId);
+  };
+
+  const isLoading = medicationsLoading || logsLoading;
+
+  // Mock patient name - in real app this would come from patient relationship
+  const patientName = "Eleanor Thompson";
+
+  // Get dates when medications were taken for calendar highlighting
+  const takenDates = new Set(medicationLogs.map(log => log.date_taken));
+
+  const recentActivity = medicationLogs
+    .slice(0, 5)
+    .map(log => {
+      const medication = medications.find(m => m.id === log.medication_id);
+      return {
+        date: log.date_taken,
+        medicationName: medication?.name || "Unknown Medication",
+        taken: true,
+        time: format(new Date(log.taken_at), "h:mm a"),
+        hasPhoto: !!log.photo_url,
+      };
+    });
 
   const handleSendReminderEmail = () => {
     console.log("Sending reminder email to patient...");
-    // Here you would implement email sending functionality
     alert("Reminder email sent to " + patientName);
   };
 
@@ -92,13 +93,6 @@ const CaretakerDashboard = ({
   const handleViewCalendar = () => {
     setActiveTab("calendar");
   };
-
-  const handleOpenCaretakerDialog = () => {
-    setIsCaretakerDlgOpen(!isCaretakerDlgOpen);
-  };
-
-  console.log("medications", medications);
-  
 
   return (
     <div className="space-y-6">
@@ -118,35 +112,29 @@ const CaretakerDashboard = ({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{adherenceRate}%</div>
+            <div className="text-2xl font-bold">{adherenceStats.adherencePercentage}%</div>
             <div className="text-white/80">Adherence Rate</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{currentStreak}</div>
+            <div className="text-2xl font-bold">{adherenceStats.currentStreak}</div>
             <div className="text-white/80">Current Streak</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{missedDoses}</div>
+            <div className="text-2xl font-bold">{adherenceStats.missedThisMonth}</div>
             <div className="text-white/80">Missed This Month</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">
-              {recentActivity.filter((a) => a.taken).length}
-            </div>
-            <div className="text-white/80">Taken This Week</div>
+            <div className="text-2xl font-bold">{adherenceStats.takenToday}</div>
+            <div className="text-white/80">Taken Today</div>
           </div>
         </div>
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
-      >
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+          <TabsTrigger value="medications">Medications</TabsTrigger>
           <TabsTrigger value="calendar">Calendar View</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
@@ -162,24 +150,18 @@ const CaretakerDashboard = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between p-3 bg-accent/50 rounded-lg">
-                  <div>
-                    <h4 className="font-medium">{dailyMedication.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {dailyMedication.time}
-                    </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-accent/50 rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Total Medications</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {adherenceStats.totalMedications} medications scheduled
+                      </p>
+                    </div>
+                    <Badge variant={adherenceStats.takenToday === adherenceStats.totalMedications ? "secondary" : "destructive"}>
+                      {adherenceStats.takenToday}/{adherenceStats.totalMedications} Taken
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={
-                      dailyMedication.status === "pending"
-                        ? "destructive"
-                        : "secondary"
-                    }
-                  >
-                    {dailyMedication.status === "pending"
-                      ? "Pending"
-                      : "Completed"}
-                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -214,92 +196,91 @@ const CaretakerDashboard = ({
                   <CalendarIcon className="w-4 h-4 mr-2" />
                   View Full Calendar
                 </Button>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => setIsCaretakerDlgOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Medication
+                </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Adherence Progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Adherence Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm">
-                  <span>Overall Progress</span>
-                  <span>{adherenceRate}%</span>
+          {/* Adherence Stats */}
+          <AdherenceStats stats={adherenceStats} isLoading={isLoading} />
+
+          {/* Recent Activity */}
+          {recentActivity.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentActivity.map((activity, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{activity.medicationName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Taken on {format(new Date(activity.date), "EEEE, MMMM d")} at {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {activity.hasPhoto && (
+                          <Badge variant="outline">Photo</Badge>
+                        )}
+                        <Badge variant="secondary">Completed</Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Progress value={adherenceRate} className="h-3" />
-                <div className="grid grid-cols-3 gap-4 text-center text-sm">
-                  <div>
-                    <div className="font-medium text-green-600">22 days</div>
-                    <div className="text-muted-foreground">Taken</div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-red-600">3 days</div>
-                    <div className="text-muted-foreground">Missed</div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-blue-600">5 days</div>
-                    <div className="text-muted-foreground">Remaining</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-6">
+        <TabsContent value="medications" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Medication Activity</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Manage Medications</CardTitle>
+                <Button
+                  onClick={() => setIsCaretakerDlgOpen(true)}
+                  className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Medication
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          activity.taken ? "bg-green-100" : "bg-red-100"
-                        }`}
-                      >
-                        {activity.taken ? (
-                          <Check className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <AlertTriangle className="w-5 h-5 text-red-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {format(new Date(activity.date), "EEEE, MMMM d")}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.taken
-                            ? `Taken at ${activity.time}`
-                            : "Medication missed"}
-                        </p>
-                      </div>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-20 bg-gray-200 rounded-lg"></div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {activity.hasPhoto && (
-                        <Badge variant="outline">
-                          <Camera className="w-3 h-3 mr-1" />
-                          Photo
-                        </Badge>
-                      )}
-                      <Badge
-                        variant={activity.taken ? "secondary" : "destructive"}
-                      >
-                        {activity.taken ? "Completed" : "Missed"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <MedicationList
+                  medications={medications}
+                  medicationLogs={medicationLogs}
+                  onMarkTaken={handleMarkTaken}
+                  onDelete={handleDeleteMedication}
+                  isLoading={markMedicationTakenMutation.isPending || deleteMedicationMutation.isPending}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -375,8 +356,7 @@ const CaretakerDashboard = ({
                           </span>
                         </div>
                         <p className="text-sm text-green-700">
-                          {patientName} successfully took their medication on
-                          this day.
+                          {patientName} successfully took their medication on this day.
                         </p>
                       </div>
                     ) : isBefore(selectedDate, startOfDay(new Date())) ? (
@@ -388,17 +368,14 @@ const CaretakerDashboard = ({
                           </span>
                         </div>
                         <p className="text-sm text-red-700">
-                          {patientName} did not take their medication on this
-                          day.
+                          {patientName} did not take their medication on this day.
                         </p>
                       </div>
                     ) : isToday(selectedDate) ? (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="flex items-center gap-2 mb-2">
                           <Clock className="w-5 h-5 text-blue-600" />
-                          <span className="font-medium text-blue-800">
-                            Today
-                          </span>
+                          <span className="font-medium text-blue-800">Today</span>
                         </div>
                         <p className="text-sm text-blue-700">
                           Monitor {patientName}'s medication status for today.
@@ -429,9 +406,12 @@ const CaretakerDashboard = ({
         </TabsContent>
       </Tabs>
 
-      <FormDlg
-        isCaretakerDlgOpen={isCaretakerDlgOpen}
-        handleOpenCaretakerDialog={handleOpenCaretakerDialog}
+      {/* Medication Form Dialog */}
+      <MedicationForm
+        isOpen={isCaretakerDlgOpen}
+        onClose={() => setIsCaretakerDlgOpen(false)}
+        onSubmit={handleAddMedication}
+        isLoading={addMedicationMutation.isPending}
       />
     </div>
   );
