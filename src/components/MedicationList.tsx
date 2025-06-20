@@ -36,10 +36,6 @@ const MedicationList: React.FC<MedicationListProps> = ({
   console.log("today:", today);
 
   const isTakenToday = (medicationId: string): boolean => {
-    console.log(
-      "today:",
-      medicationLogs.map((log) => log.date_taken)
-    );
     return medicationLogs.some(
       (log) =>
         log.medication_id === medicationId &&

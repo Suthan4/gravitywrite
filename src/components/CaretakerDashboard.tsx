@@ -70,7 +70,7 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
   const recentActivity = medicationLogs.slice(0, 5).map((log) => {
     const medication = medications.find((m) => m.id === log.medication_id);
     return {
-      date: log.date_taken,
+      date: log.date_taken.split("T")[0],
       medicationName: medication?.medication_name || "Unknown Medication",
       taken: true,
       time: format(new Date(log.taken_at), "h:mm a"),

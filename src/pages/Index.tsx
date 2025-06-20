@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/authContextProvider";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 type UserType = "patient" | "caretaker" | null;
 
@@ -26,6 +27,12 @@ const Index = () => {
   const [isPatientDlgOpen, setIsPatientDlgOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const ref = useClickOutside<HTMLDivElement>(() => {
+    if (showUserMenu) {
+      setShowUserMenu(false);
+    }
+  });
 
   // Initialize user type from user metadata
   useEffect(() => {
@@ -86,7 +93,7 @@ const Index = () => {
           </div>
           {/* User Menu Dropdown */}
           <div className="flex items-center gap-3">
-            <div className="relative">
+            <div className="relative" ref={ref}>
               <Button
                 variant="ghost"
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -94,18 +101,11 @@ const Index = () => {
               >
                 <UserCircle className="w-5 h-5" />
                 {user?.fullName || user?.email}
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showUserMenu ? "rotate-180" : ""}`} />
               </Button>
 
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-border/20 py-1 z-50">
-                  <button
-                    onClick={() => setShowUserMenu(false)}
-                    className="w-full px-4 py-2 text-left hover:bg-accent flex items-center gap-2 text-sm"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </button>
                   <hr className="my-1 border-border/20" />
                   <button
                     onClick={handleLogout}

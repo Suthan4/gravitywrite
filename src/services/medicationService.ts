@@ -255,7 +255,7 @@ export const useMedicationService = () => {
     const thisYear = new Date().getFullYear();
 
     const takenToday = medicationLogs.filter(
-      (log) => log.date_taken === today
+      (log) => log.date_taken.split("T")[0] === today
     ).length;
 
     const totalMedications = medications.length;
@@ -264,7 +264,7 @@ export const useMedicationService = () => {
     const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
     const expectedDoses = totalMedications * daysInMonth;
     const actualDoses = medicationLogs.filter((log) => {
-      const logDate = new Date(log.date_taken);
+      const logDate = new Date(log.date_taken.split("T")[0]);
       return (
         logDate.getMonth() === thisMonth && logDate.getFullYear() === thisYear
       );
@@ -281,7 +281,7 @@ export const useMedicationService = () => {
       // Max 30 days to prevent infinite loop
       const dateStr = checkDate.toISOString().split("T")[0];
       const takenOnDate = medicationLogs.some(
-        (log) => log.date_taken === dateStr
+        (log) => log.date_taken.split("T")[0] === dateStr
       );
 
       if (!takenOnDate) break;
