@@ -9,6 +9,7 @@ import {
   CreateMedicationLogData,
   AdherenceStats,
 } from "@/types/medication";
+import React from "react";
 
 export const useMedicationService = () => {
   const { user } = useAuth();
@@ -134,6 +135,14 @@ export const useMedicationService = () => {
     mutationFn: async (medicationId: string): Promise<void> => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      // First delete all logs for this medication
+      await supabase
+        .from("medication_logs")
+        .delete()
+        .eq("medication_id", medicationId)
+        .eq("user_id", user.id);
+
+      // Then delete the medication
       const { error } = await supabase
         .from("medications")
         .delete()
@@ -171,6 +180,7 @@ export const useMedicationService = () => {
           {
             ...logData,
             user_id: user.id,
+            taken_at: new Date().toISOString(),
           },
           {
             onConflict: "medication_id,date_taken",
@@ -293,6 +303,3 @@ export const useMedicationService = () => {
     markMedicationTakenMutation,
   };
 };
-
-// Import React for useMemo
-import React from "react";

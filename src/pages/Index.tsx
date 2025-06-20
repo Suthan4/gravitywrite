@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Onboarding from "@/components/Onboarding";
 import PatientDashboard from "@/components/PatientDashboard";
 import CaretakerDashboard from "@/components/CaretakerDashboard";
@@ -26,6 +26,14 @@ const Index = () => {
   const [isPatientDlgOpen, setIsPatientDlgOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Initialize user type from user metadata
+  useEffect(() => {
+    if (user?.userType) {
+      setUserType(user.userType);
+      setIsOnboarded(true);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -85,7 +93,7 @@ const Index = () => {
                 className="flex items-center gap-2 hover:bg-accent transition-colors"
               >
                 <UserCircle className="w-5 h-5" />
-                {user?.fullName}
+                {user?.fullName || user?.email}
                 <ChevronDown className="w-4 h-4" />
               </Button>
 
