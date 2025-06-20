@@ -33,18 +33,28 @@ const MedicationList: React.FC<MedicationListProps> = ({
   isLoading = false,
 }) => {
   const today = new Date().toISOString().split("T")[0];
+  console.log("today:", today);
 
   const isTakenToday = (medicationId: string): boolean => {
+    console.log(
+      "today:",
+      medicationLogs.map((log) => log.date_taken)
+    );
     return medicationLogs.some(
-      (log) => log.medication_id === medicationId && log.date_taken === today
+      (log) =>
+        log.medication_id === medicationId &&
+        log.date_taken.split("T")[0] === today
     );
   };
 
   const getLastTaken = (medicationId: string): string | null => {
     const logs = medicationLogs
       .filter((log) => log.medication_id === medicationId)
-      .sort((a, b) => new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime());
-    
+      .sort(
+        (a, b) =>
+          new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()
+      );
+
     return logs.length > 0 ? logs[0].date_taken : null;
   };
 
@@ -69,28 +79,35 @@ const MedicationList: React.FC<MedicationListProps> = ({
         const lastTaken = getLastTaken(medication.id);
 
         return (
-          <Card key={medication.id} className="hover:shadow-md transition-shadow">
+          <Card
+            key={medication.id}
+            className="hover:shadow-md transition-shadow"
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    takenToday ? 'bg-green-100' : 'bg-blue-100'
-                  }`}>
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      takenToday ? "bg-green-100" : "bg-blue-100"
+                    }`}
+                  >
                     {takenToday ? (
                       <Check className="w-6 h-6 text-green-600" />
                     ) : (
                       <Pill className="w-6 h-6 text-blue-600" />
                     )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">{medication.name}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {medication.medication_name}
+                      </h3>
                       <Badge variant={takenToday ? "secondary" : "outline"}>
                         {medication.frequency}
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       {medication.dosage && (
                         <span>Dosage: {medication.dosage}</span>
@@ -102,12 +119,13 @@ const MedicationList: React.FC<MedicationListProps> = ({
                         </div>
                       )}
                     </div>
-                    
+
                     {lastTaken && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <Calendar className="w-4 h-4" />
                         <span>
-                          Last taken: {format(new Date(lastTaken), "MMM d, yyyy")}
+                          Last taken:{" "}
+                          {format(new Date(lastTaken), "MMM d, yyyy")}
                         </span>
                       </div>
                     )}
@@ -125,9 +143,12 @@ const MedicationList: React.FC<MedicationListProps> = ({
                       Mark Taken
                     </Button>
                   )}
-                  
+
                   {takenToday && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-800"
+                    >
                       ✓ Taken Today
                     </Badge>
                   )}
@@ -147,7 +168,9 @@ const MedicationList: React.FC<MedicationListProps> = ({
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Medication</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete "{medication.name}"? This action cannot be undone and will also remove all associated logs.
+                          Are you sure you want to delete "
+                          {medication.medication_name}"? This action cannot be
+                          undone and will also remove all associated logs.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
