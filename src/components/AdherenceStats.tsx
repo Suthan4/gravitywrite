@@ -128,7 +128,7 @@ const AdherenceStats: React.FC<AdherenceStatsProps> = ({ stats, isLoading = fals
               </div>
             </div>
           </CardContent>
-        </div>
+        </Card>
       </div>
     </div>
   );
