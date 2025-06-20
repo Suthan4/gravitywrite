@@ -46,7 +46,7 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
   } = useMedicationService();
 
   const handleAddMedication = async (data: CreateMedicationData) => {
-    await addMedicationMutation.mutateAsync(data);
+    await addMedicationMutation.mutate(data);
   };
 
   const handleMarkTaken = (medicationId: string, dateTaken: string) => {

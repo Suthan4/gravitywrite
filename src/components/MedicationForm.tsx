@@ -32,20 +32,22 @@ const FREQUENCY_OPTIONS = [
 ] as const;
 
 const medicationSchema = z.object({
-  name: z.string().min(2, "Medication name must be at least 2 characters"),
+  medication_name: z
+    .string()
+    .min(2, "Medication name must be at least 2 characters"),
   dosage: z.string().optional(),
   frequency: z.enum(FREQUENCY_OPTIONS, {
     errorMap: () => ({ message: "Please select a valid frequency" }),
   }),
-  time_to_take: z.string().optional(),
+  time_to_take: z.string().min(2, "Time is required"),
 });
 
-type MedicationFormData = z.infer<typeof medicationSchema>;
+export type MedicationFormData = z.infer<typeof medicationSchema>;
 
 interface MedicationFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateMedicationData) => Promise<void>;
+  onSubmit: (data: MedicationFormData) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -64,7 +66,7 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
   } = useForm<MedicationFormData>({
     resolver: zodResolver(medicationSchema),
     defaultValues: {
-      name: "",
+      medication_name: "",
       dosage: "",
       frequency: "Daily",
       time_to_take: "",
@@ -114,9 +116,9 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
                   placeholder="e.g., Aspirin, Vitamin D"
                   className="pl-10"
                   disabled={isLoading}
-                  {...register("name")}
-                  error={!!errors.name}
-                  errorMsg={errors.name?.message}
+                  {...register("medication_name")}
+                  error={!!errors.medication_name}
+                  errorMsg={errors.medication_name?.message}
                 />
               </div>
             </div>
@@ -160,7 +162,9 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
                 )}
               />
               {errors.frequency && (
-                <p className="text-sm text-red-500">{errors.frequency.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.frequency.message}
+                </p>
               )}
             </div>
 
