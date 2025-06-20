@@ -10,6 +10,7 @@ import {
   AdherenceStats,
 } from "@/types/medication";
 import React from "react";
+import { MedicationFormData } from "@/components/MedicationForm";
 
 export const useMedicationService = () => {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export const useMedicationService = () => {
       if (!user?.id) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from("medications")
+        .from("MedicationCrud")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -38,10 +39,7 @@ export const useMedicationService = () => {
   });
 
   // Fetch medication logs
-  const {
-    data: medicationLogs = [],
-    isLoading: logsLoading,
-  } = useQuery({
+  const { data: medicationLogs = [], isLoading: logsLoading } = useQuery({
     queryKey: ["medication-logs", user?.id],
     queryFn: async (): Promise<MedicationLog[]> => {
       if (!user?.id) throw new Error("User not authenticated");
@@ -60,11 +58,13 @@ export const useMedicationService = () => {
 
   // Add medication mutation
   const addMedicationMutation = useMutation({
-    mutationFn: async (medicationData: CreateMedicationData): Promise<Medication> => {
+    mutationFn: async (
+      medicationData: MedicationFormData
+    ): Promise<Medication> => {
       if (!user?.id) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from("medications")
+        .from("MedicationCrud")
         .insert([
           {
             ...medicationData,
@@ -103,7 +103,7 @@ export const useMedicationService = () => {
       if (!user?.id) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
-        .from("medications")
+        .from("MedicationCrud")
         .update(updates)
         .eq("id", id)
         .eq("user_id", user.id)
@@ -144,7 +144,7 @@ export const useMedicationService = () => {
 
       // Then delete the medication
       const { error } = await supabase
-        .from("medications")
+        .from("MedicationCrud")
         .delete()
         .eq("id", medicationId)
         .eq("user_id", user.id);
@@ -153,7 +153,9 @@ export const useMedicationService = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["medications", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["medication-logs", user?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["medication-logs", user?.id],
+      });
       toast({
         title: "Success",
         description: "Medication deleted successfully!",
@@ -171,21 +173,18 @@ export const useMedicationService = () => {
 
   // Mark medication as taken mutation with optimistic updates
   const markMedicationTakenMutation = useMutation({
-    mutationFn: async (logData: CreateMedicationLogData): Promise<MedicationLog> => {
+    mutationFn: async (
+      logData: CreateMedicationLogData
+    ): Promise<MedicationLog> => {
       if (!user?.id) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
         .from("medication_logs")
-        .upsert(
-          {
-            ...logData,
-            user_id: user.id,
-            taken_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "medication_id,date_taken",
-          }
-        )
+        .upsert({
+          ...logData,
+          user_id: user.id,
+          taken_at: new Date().toISOString(),
+        })
         .select()
         .single();
 
@@ -194,7 +193,9 @@ export const useMedicationService = () => {
     },
     onMutate: async (newLog) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["medication-logs", user?.id] });
+      await queryClient.cancelQueries({
+        queryKey: ["medication-logs", user?.id],
+      });
 
       // Snapshot previous value
       const previousLogs = queryClient.getQueryData<MedicationLog[]>([
@@ -223,7 +224,10 @@ export const useMedicationService = () => {
     onError: (err, newLog, context) => {
       // Rollback on error
       if (context?.previousLogs) {
-        queryClient.setQueryData(["medication-logs", user?.id], context.previousLogs);
+        queryClient.setQueryData(
+          ["medication-logs", user?.id],
+          context.previousLogs
+        );
       }
       toast({
         title: "Error",
@@ -232,7 +236,9 @@ export const useMedicationService = () => {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["medication-logs", user?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["medication-logs", user?.id],
+      });
     },
     onSuccess: () => {
       toast({
@@ -259,21 +265,27 @@ export const useMedicationService = () => {
     const expectedDoses = totalMedications * daysInMonth;
     const actualDoses = medicationLogs.filter((log) => {
       const logDate = new Date(log.date_taken);
-      return logDate.getMonth() === thisMonth && logDate.getFullYear() === thisYear;
+      return (
+        logDate.getMonth() === thisMonth && logDate.getFullYear() === thisYear
+      );
     }).length;
 
-    const adherencePercentage = expectedDoses > 0 ? Math.round((actualDoses / expectedDoses) * 100) : 0;
+    const adherencePercentage =
+      expectedDoses > 0 ? Math.round((actualDoses / expectedDoses) * 100) : 0;
 
     // Calculate current streak
     let currentStreak = 0;
     let checkDate = new Date();
-    
-    while (currentStreak < 30) { // Max 30 days to prevent infinite loop
+
+    while (currentStreak < 30) {
+      // Max 30 days to prevent infinite loop
       const dateStr = checkDate.toISOString().split("T")[0];
-      const takenOnDate = medicationLogs.some(log => log.date_taken === dateStr);
-      
+      const takenOnDate = medicationLogs.some(
+        (log) => log.date_taken === dateStr
+      );
+
       if (!takenOnDate) break;
-      
+
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);
     }
