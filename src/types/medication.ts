@@ -1,7 +1,7 @@
 export interface Medication {
   id: string;
   user_id: string;
-  name: string;
+  medication_name: string;
   dosage?: string;
   frequency: string;
   time_to_take?: string;

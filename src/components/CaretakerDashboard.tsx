@@ -15,12 +15,11 @@ import {
   Plus,
 } from "lucide-react";
 import NotificationSettings from "./NotificationSettings";
-import MedicationForm from "./MedicationForm";
+import MedicationForm, { MedicationFormData } from "./MedicationForm";
 import MedicationList from "./MedicationList";
 import AdherenceStats from "./AdherenceStats";
 import { format, isToday, isBefore, startOfDay } from "date-fns";
 import { useMedicationService } from "@/services/medicationService";
-import { CreateMedicationData } from "@/types/medication";
 
 interface CaretakerDashboardProps {
   setIsCaretakerDlgOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,7 +44,7 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
     markMedicationTakenMutation,
   } = useMedicationService();
 
-  const handleAddMedication = async (data: CreateMedicationData) => {
+  const handleAddMedication = async (data: MedicationFormData) => {
     await addMedicationMutation.mutate(data);
   };
 
@@ -66,20 +65,18 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
   const patientName = "Eleanor Thompson";
 
   // Get dates when medications were taken for calendar highlighting
-  const takenDates = new Set(medicationLogs.map(log => log.date_taken));
+  const takenDates = new Set(medicationLogs.map((log) => log.date_taken));
 
-  const recentActivity = medicationLogs
-    .slice(0, 5)
-    .map(log => {
-      const medication = medications.find(m => m.id === log.medication_id);
-      return {
-        date: log.date_taken,
-        medicationName: medication?.name || "Unknown Medication",
-        taken: true,
-        time: format(new Date(log.taken_at), "h:mm a"),
-        hasPhoto: !!log.photo_url,
-      };
-    });
+  const recentActivity = medicationLogs.slice(0, 5).map((log) => {
+    const medication = medications.find((m) => m.id === log.medication_id);
+    return {
+      date: log.date_taken,
+      medicationName: medication?.medication_name || "Unknown Medication",
+      taken: true,
+      time: format(new Date(log.taken_at), "h:mm a"),
+      hasPhoto: !!log.photo_url,
+    };
+  });
 
   const handleSendReminderEmail = () => {
     console.log("Sending reminder email to patient...");
@@ -112,26 +109,38 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{adherenceStats.adherencePercentage}%</div>
+            <div className="text-2xl font-bold">
+              {adherenceStats.adherencePercentage}%
+            </div>
             <div className="text-white/80">Adherence Rate</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{adherenceStats.currentStreak}</div>
+            <div className="text-2xl font-bold">
+              {adherenceStats.currentStreak}
+            </div>
             <div className="text-white/80">Current Streak</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{adherenceStats.missedThisMonth}</div>
+            <div className="text-2xl font-bold">
+              {adherenceStats.missedThisMonth}
+            </div>
             <div className="text-white/80">Missed This Month</div>
           </div>
           <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-            <div className="text-2xl font-bold">{adherenceStats.takenToday}</div>
+            <div className="text-2xl font-bold">
+              {adherenceStats.takenToday}
+            </div>
             <div className="text-white/80">Taken Today</div>
           </div>
         </div>
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="medications">Medications</TabsTrigger>
@@ -158,8 +167,16 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
                         {adherenceStats.totalMedications} medications scheduled
                       </p>
                     </div>
-                    <Badge variant={adherenceStats.takenToday === adherenceStats.totalMedications ? "secondary" : "destructive"}>
-                      {adherenceStats.takenToday}/{adherenceStats.totalMedications} Taken
+                    <Badge
+                      variant={
+                        adherenceStats.takenToday ===
+                        adherenceStats.totalMedications
+                          ? "secondary"
+                          : "destructive"
+                      }
+                    >
+                      {adherenceStats.takenToday}/
+                      {adherenceStats.totalMedications} Taken
                     </Badge>
                   </div>
                 </div>
@@ -229,9 +246,13 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
                           <Check className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-medium">{activity.medicationName}</p>
+                          <p className="font-medium">
+                            {activity.medicationName}
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            Taken on {format(new Date(activity.date), "EEEE, MMMM d")} at {activity.time}
+                            Taken on{" "}
+                            {format(new Date(activity.date), "EEEE, MMMM d")} at{" "}
+                            {activity.time}
                           </p>
                         </div>
                       </div>
@@ -278,7 +299,10 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
                   medicationLogs={medicationLogs}
                   onMarkTaken={handleMarkTaken}
                   onDelete={handleDeleteMedication}
-                  isLoading={markMedicationTakenMutation.isPending || deleteMedicationMutation.isPending}
+                  isLoading={
+                    markMedicationTakenMutation.isPending ||
+                    deleteMedicationMutation.isPending
+                  }
                 />
               )}
             </CardContent>
@@ -356,7 +380,8 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
                           </span>
                         </div>
                         <p className="text-sm text-green-700">
-                          {patientName} successfully took their medication on this day.
+                          {patientName} successfully took their medication on
+                          this day.
                         </p>
                       </div>
                     ) : isBefore(selectedDate, startOfDay(new Date())) ? (
@@ -368,14 +393,17 @@ const CaretakerDashboard: React.FC<CaretakerDashboardProps> = ({
                           </span>
                         </div>
                         <p className="text-sm text-red-700">
-                          {patientName} did not take their medication on this day.
+                          {patientName} did not take their medication on this
+                          day.
                         </p>
                       </div>
                     ) : isToday(selectedDate) ? (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="flex items-center gap-2 mb-2">
                           <Clock className="w-5 h-5 text-blue-600" />
-                          <span className="font-medium text-blue-800">Today</span>
+                          <span className="font-medium text-blue-800">
+                            Today
+                          </span>
                         </div>
                         <p className="text-sm text-blue-700">
                           Monitor {patientName}'s medication status for today.
