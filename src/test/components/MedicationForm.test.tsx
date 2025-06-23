@@ -206,11 +206,7 @@ describe("MedicationForm", () => {
 
   it("allows changing frequency selection", async () => {
     const user = userEvent.setup();
-    mockOnSubmit.mockResolvedValue(undefined); // Keep as-is
-
-    // Use vi instead of jest
-    window.HTMLElement.prototype.hasPointerCapture = vi.fn();
-    window.HTMLElement.prototype.setPointerCapture = vi.fn();
+    mockOnSubmit.mockResolvedValue(undefined);
 
     render(
       <MedicationForm
@@ -226,18 +222,24 @@ describe("MedicationForm", () => {
     await user.type(nameInput, "Medicine");
     await user.type(timeInput, "10:00");
 
-    // Use test ID to get the trigger
-    const selectTrigger = screen.getByTestId("frequency-select-trigger");
+    // Click the select trigger
+    const selectTrigger = screen.getByRole("combobox");
     await user.click(selectTrigger);
 
-    // Wait for content to appear using test ID
-    const dropdown = await screen.findByTestId("frequency-select-content");
+    // Wait for the select content to appear
+    const selectContent = await screen.findByTestId("frequency-select-content");
+    expect(selectContent).toBeInTheDocument();
 
-    // Find option using test ID
-    const twiceDailyOption = within(dropdown).getByTestId(
+    // Find and click the option using test ID
+    const twiceDailyOption = await screen.findByTestId(
       "frequency-option-twice-daily"
     );
     await user.click(twiceDailyOption);
+
+    // Verify selection
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Twice Daily")).toBeInTheDocument();
+    });
 
     const submitButton = screen.getByRole("button", {
       name: /add medication/i,

@@ -154,16 +154,19 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
                     <SelectTrigger
                       data-testid="frequency-select-trigger"
                       aria-label="Frequency"
+                      role="combobox"
                     >
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     {/* Add portalProps to attach test ID to portal */}
-                    <SelectContent>
+                    <SelectContent  data-testid="frequency-select-content">
                       {FREQUENCY_OPTIONS.map((option) => (
                         <SelectItem
                           key={option}
                           value={option}
-                          data-testid={`frequency-option-${option.toLowerCase()}`}
+                          data-testid={`frequency-option-${option
+                            .toLowerCase()
+                            .replace(/\s+/g, "-")}`}
                         >
                           {option}
                         </SelectItem>

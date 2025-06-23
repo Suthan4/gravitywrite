@@ -10,6 +10,8 @@ A comprehensive medication management application built with React, TypeScript, 
 Install Bun: https://bun.sh
 ```bash
 curl -fsSL https://bun.sh/install | bash
+# Or for Windows, use PowerShell:
+powershell -c "iwr bun.sh/install.ps1|iex"
 ```
 - Supabase account
 
