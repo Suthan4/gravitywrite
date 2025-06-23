@@ -36,9 +36,11 @@ const medicationSchema = z.object({
     .string()
     .min(2, "Medication name must be at least 2 characters"),
   dosage: z.string().optional(),
-  frequency: z.enum(FREQUENCY_OPTIONS, {
-    errorMap: () => ({ message: "Please select a valid frequency" }),
-  }),
+  frequency: z
+    .enum(FREQUENCY_OPTIONS, {
+      errorMap: () => ({ message: "Please select a valid frequency" }),
+    })
+    .default("Daily"),
   time_to_take: z.string().min(2, "Time is required"),
 });
 
@@ -107,11 +109,11 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
           <div className="space-y-4 py-4">
             {/* Medication Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Medication Name *</Label>
+              <Label htmlFor="medication_name">Medication Name *</Label>
               <div className="relative">
                 <Pill className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="name"
+                  id="medication_name"
                   autoFocus
                   placeholder="e.g., Aspirin, Vitamin D"
                   className="pl-10"
@@ -142,18 +144,27 @@ const MedicationForm: React.FC<MedicationFormProps> = ({
               <Controller
                 name="frequency"
                 control={control}
+                defaultValue="Daily"
                 render={({ field }) => (
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
                     disabled={isLoading}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      data-testid="frequency-select-trigger"
+                      aria-label="Frequency"
+                    >
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
+                    {/* Add portalProps to attach test ID to portal */}
                     <SelectContent>
                       {FREQUENCY_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option}>
+                        <SelectItem
+                          key={option}
+                          value={option}
+                          data-testid={`frequency-option-${option.toLowerCase()}`}
+                        >
                           {option}
                         </SelectItem>
                       ))}
